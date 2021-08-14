@@ -1,0 +1,81 @@
+import numpy as np  # linear algebra
+import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
+import networkx as nx
+import matplotlib.pyplot as plt
+import math
+
+unique_resource = 2
+num_ships = 3
+ship_capacity = 200
+num_labs = 2
+pro_mat_thresh = 300
+num_quotas = 1
+
+total_resource_clust = 4
+
+#replace with actual data
+resource_coord = pd.DataFrame({'s':[0,0,0], 'a0': [-3, -3, -4], 'a1': [29, 7, 5], 'a2': [27, -0, -1], 'a3': [37, -0, -1]},
+                              index=['x', 'y', 'z'])
+resource_val = {'a0': 12, 'a1': 12, 'a2': 12}
+
+
+resource_coord = resource_coord.T
+
+
+def edge_set_maker(resource_coord):
+    num_of_nodes = resource_coord.index.size
+    edge_set = pd.DataFrame(np.zeros((num_of_nodes, num_of_nodes)))
+
+    ii = 0
+    while ii < num_of_nodes:
+        jj = 0
+        while jj < num_of_nodes:
+            x_diff = abs((resource_coord.iloc[ii, 0]) - (resource_coord.iloc[jj, 0]))
+            y_diff = abs((resource_coord.iloc[ii, 1]) - (resource_coord.iloc[jj, 1]))
+            z_diff = abs((resource_coord.iloc[ii, 2]) - (resource_coord.iloc[jj, 2]))
+            distance = math.sqrt(x_diff ** 2 + y_diff ** 2 + z_diff ** 2)
+            edge_set.loc[ii, jj] = distance
+            jj +=1
+        ii +=1
+
+    return edge_set
+
+
+def create_graph(total_res_clusters, weight_edges):
+
+    nodes = resource_coord.index.size
+    G = nx.Graph()
+
+    ii=0
+    while ii < nodes:
+        #weight below resources at cluster
+        G.add_node(ii, weight = 4)
+        ii+=1
+
+    ii=0
+    while ii < nodes:
+        jj = ii+1
+        while jj <= nodes-1:
+            edge_weight = weight_edges.iloc[ii, jj]
+            G.add_edge(ii, jj, weight = edge_weight)
+            jj+=1
+        ii+=1
+
+
+    pos = nx.spring_layout(G)
+    plt.figure()
+
+    labels = {n: G.nodes[n]['weight'] for n in G.nodes}
+    colors = [G.nodes[n]['weight'] for n in G.nodes]
+    nx.draw(G, with_labels=True, labels=labels, node_color=colors)
+
+    plt.axis('off')
+    plt.show()
+
+    return G
+
+
+weight_edges = edge_set_maker(resource_coord)
+print(weight_edges)
+graph = create_graph(total_resource_clust, weight_edges)
+print(graph)
